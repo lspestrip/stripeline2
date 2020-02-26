@@ -6,11 +6,13 @@ searchdir(path, key) = filter(x->occursin(key, x), readdir(path))
 
 pars_arg = ARGS
 
-elevation_angle_deg = parse(Float64, pars_arg[1])
+elevation_angle_deg = pars_arg[1]
+path = pars_arg[2]
+name = pars_arg[3]
 
-files = searchdir(pars_arg[2], join([pars_arg[1], "°"]))
-g = FITS(join([pars_arg[2], files[1]]), "r")
-z = FITS(join([pars_arg[2], files[end]]), "r")
+files = searchdir(path, join([elevation_angle_deg, "°"]))
+g = FITS(join([path, files[1]]), "r")
+z = FITS(join([path, files[end]]), "r")
 h = read_header(g[2])
 y = read_header(z[2])
 
@@ -28,14 +30,14 @@ for (j, f) in enumerate(keys_dbfp)
 end
 
 for file in files
-    load_path = join([pars_arg[2], file])
+    load_path = join([path, file])
     single_detector_map = Healpix.readMapFromFITS(load_path, 1, Float64)
     hits_map.pixels += single_detector_map.pixels
 end
 
-save_to_path = join([pars_arg[2],
-                     pars_arg[3],
-                     pars_arg[1],
+save_to_path = join([path,
+                     name,
+                     elevation_angle_deg,
                      "°_",
                      h["TSTART"][1:10],
                      "_",
@@ -61,10 +63,21 @@ write_key(f[2], "S_RATE", h["S_RATE"], "Sampling rate [Hz]")
 
 write_key(f[2], "DETECTOR", "all detectors", "Sum of all detectors")
 
+<<<<<<< HEAD
+write_key(f[2], "PRECESS", h["PRECESS"],
+          "If true precession is taken into account")
+write_key(f[2], "NUTATE", h["NUTATE"], "If true nutation is taken into account")
+write_key(f[2], "ABERRATE", h["ABERRATE"],
+          "If true aberration is taken into account")
+write_key(f[2], "REFRACT", h["REFRACT"],
+          "If true aberration is taken into account")
+=======
 write_key(f[2], "PRECESS", h["PRECESS"], "If true precession is taken into account")
 write_key(f[2], "NUTATE", h["NUTATE"], "If true nutation is taken into account")
 write_key(f[2], "ABERRATE", h["ABERRATE"], "If true aberration is taken into account")
 write_key(f[2], "REFRACT", h["REFRACT"], "If true aberration is taken into account")
 
 close(f)
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
 
+close(f)

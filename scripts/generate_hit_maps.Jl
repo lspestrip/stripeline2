@@ -7,6 +7,29 @@ comm = MPI.COMM_WORLD
 rank = MPI.Comm_rank(comm)
 size = MPI.Comm_size(comm) 
 
+function bezier1D(t, elevation_angle_deg, tilt_angle_deg, T; a=0.45, b=0.0) 
+    t /= T
+    k = t - floor(t) 
+    y = 3a * k * (1 - k)^2 + 3b * k^2 * (1- k) + k^3
+    return elevation_angle_deg + tilt_angle_deg/2 * sin(2π*y)
+end
+
+function modulate_evenly_elevation(t, elevation_angle_deg, tilt_angle_deg, T)
+    elevation_angle_deg + tilt_angle_deg/2 * sin(2π/T*t)
+end
+
+function modulate_unevenly_elevation(t, elevation_angle_deg, tilt_angle_deg, T;
+                                     a=0.45, b=2*0.46, ϕ=-0.30)
+    elevation_angle_deg += 5
+    tilt_angle_deg += 16
+    o = elevation_angle_deg + tilt_angle_deg/2 * sin(2π/T)
+    w = o^-(2/3) / ((elevation_angle_deg + tilt_angle_deg/2)^-(2/3))
+    offset = o*w - elevation_angle_deg
+    el = elevation_angle_deg + tilt_angle_deg/2 * sin(2π*t/T)
+    weight = el^-(2/3) / ((elevation_angle_deg + tilt_angle_deg/2)^-(2/3))
+    el * weight - offset*(a*cos.(2π/T*t + ϕ) + b)
+end
+
 function get_hits_map(elevation_angle::Float64,
                       spin_velocity::Float64,
                       sampling_rate::Float64,
@@ -17,8 +40,14 @@ function get_hits_map(elevation_angle::Float64,
                       longitude::Float64,
                       height::Int,
                       pointings::Array{Float64,1},
+<<<<<<< HEAD
+                      effects::Dict,
+                      modulation::Function;
+=======
                       effects::Dict;
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
                       tilt_angle::Float64=0.0,
+                      T::Float64=36000.0,
                       chunks_len::Int=86400)
 
     τ_s = 1 / sampling_rate
@@ -27,8 +56,6 @@ function get_hits_map(elevation_angle::Float64,
     skydirs = Array{Float64}(undef, length(times), 2)
     skyψ = Array{Float64}(undef, length(times), 1)
     hits_map = Healpix.Map{Float64, Healpix.RingOrder}(NSIDE)
-    
-    el_angle_mod(t) = elevation_angle + tilt_angle/2 * sin(2π*spin_velocity*t/60)
 
     nchunks = round(Int, times.len / chunks_len)
 
@@ -52,6 +79,18 @@ function get_hits_map(elevation_angle::Float64,
                                           precession=effects["precess"],
                                           nutation=effects["nutate"],
                                           aberration=effects["aberrate"],
+<<<<<<< HEAD
+                                          refract=effects["refract"]) do t_s
+                                          return (
+                                              0.0,
+                                              deg2rad(modulation(t_s,
+                                                                 elevation_angle,
+                                                                 tilt_angle,
+                                                                 T)),
+                                              Sl.timetorotang(t_s,
+                                                              spin_velocity))
+                                          end
+=======
                                           refract=effects["refract"]) do time_s
                                               return (
                                                   0.0,
@@ -59,6 +98,7 @@ function get_hits_map(elevation_angle::Float64,
                                                   Sl.timetorotang(time_s,
                                                                   spin_velocity))
                                       end
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
         
         for i in eachindex(skyψ)
             
@@ -84,6 +124,15 @@ effects = Dict("precess" => true,
                "aberrate" => true,
                "refract" => true)
 
+<<<<<<< HEAD
+modulation = bezier1D  # choose the function to modulate the elevation
+elevation_angle_deg = 20.0     
+modulation_period = parse(Float64, pars_arg[1]) 
+tilt_angle_deg = 30.0
+
+    
+=======
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
 day_start = parse(Int, pars_arg[3])
 month_start = parse(Int, pars_arg[4])
 year_start = parse(Int, pars_arg[5])
@@ -99,7 +148,6 @@ tenerife_latitude_deg = Sl.TENERIFE_LATITUDE_DEG
 tenerife_longitude_deg = Sl.TENERIFE_LONGITUDE_DEG
 tenerife_height_m = Sl.TENERIFE_HEIGHT_M 
 
-elevation_angle_deg = parse(Float64, pars_arg[1])
 spin_velocity_rpm = 1.0
 sampling_rate_hz = 50.0
 
@@ -135,7 +183,14 @@ for r in rank
                                     tenerife_longitude_deg,
                                     tenerife_height_m,
                                     db.focalplane[k].orientation,
+<<<<<<< HEAD
+                                    effects,
+                                    modulation,
+                                    T=modulation_period,
+                                    tilt_angle=tilt_angle_deg)
+=======
                                     effects)
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
                         
             save_to_path = join([pars_arg[2],
                                  db.focalplane[k].name,
@@ -164,14 +219,30 @@ for r in rank
             write_key(
                 f[2], "TSTOP", Dates.format(t_stop, "yyyy-mm-dd HH:MM:SS"),
                 "Ending Date and time of the observation: yyyy-mm-dd HH:MM:SS")
-            
-            write_key(f[2], "ANG_EL", elevation_angle_deg,
-                      "Elevation angle [Deg]")
+
+            if tilt_angle_deg == 0.0
+                write_key(f[2], "ANG_EL", elevation_angle_deg,
+                          "Elevation angle [Deg]")
+            else
+                write_key(f[2], "ANG_EL", string(modulation),
+                          "Elevation angle [Deg]")
+            end
+             
             write_key(f[2], "SPIN_VEL", spin_velocity_rpm, "Spin velocity [rpm]")
             write_key(f[2], "S_RATE", sampling_rate_hz, "Sampling rate [Hz]")
             
             write_key(f[2], "DETECTOR", db.focalplane[k].name, "Detector name")
             
+<<<<<<< HEAD
+            write_key(f[2], "PRECESS", effects["precess"],
+                      "If true precession is taken into account")
+            write_key(f[2], "NUTATE", effects["nutate"], "If true nutation is 
+                      taken into account")
+            write_key(f[2], "ABERRATE", effects["aberrate"],
+                      "If true aberration is taken into account")
+            write_key(f[2], "REFRACT", effects["refract"],
+                      "If true aberration istaken into account")
+=======
             write_key(f[2], "PRECESS", effects["precess"], "If true precession is 
                       taken into account")
             write_key(f[2], "NUTATE", effects["nutate"], "If true nutation is 
@@ -180,6 +251,7 @@ for r in rank
                       taken into account")
             write_key(f[2], "REFRACT", effects["refract"], "If true aberration is 
                       taken into account")
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
 
             close(f)
         end
@@ -187,4 +259,3 @@ for r in rank
 end
     
 MPI.Finalize()
-    

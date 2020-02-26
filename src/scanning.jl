@@ -173,7 +173,10 @@ end
 """
     vector2equatorial(dir, jd, latitude_deg, longitude_deg, height_m; 
                       prec=true, nut=true, aber=true)
+<<<<<<< HEAD
+=======
 
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
 Transform the Healpix coordinates of a vector into equatorial coordinates.
 The parameter `vector` is 3D vector, `jd` is the julian date. The
 paramters `latitude_deg`, `longitude_deg` and `height_m` should contain the
@@ -312,7 +315,7 @@ function genpointings(wheelanglesfn,
         rotmatr = rotationmatrix_normalized(groundq)
         vector = rotmatr * dir
 
-        jd = AstroLib.jdcnv(t_start + Dates.Nanosecond(round(Int64, time_s * 1e9)))
+        jd = AstroLib.jdcnv(t_start + Dates.Nanosecond(round(Int64, time_s*1e9)))
         Dec_rad, Ra_rad = vector2equatorial(vector,
                                             jd,
                                             latitude_deg,
@@ -380,6 +383,15 @@ The meaning of the parameters/keywords is the following:
 
 - `precession` is a boolen parameter that allow to include the Earth's precession
   effect; default is true.
+<<<<<<< HEAD
+- `nutation` is a boolen parameter that allow to include the Earth's nutation
+  effect; default is true.
+- `aberration` is a boolen parameter that allow to include the stellar aberration
+  effect; default is true.
+- `refract` is a boolen parameter that allow to include the refraction correction
+  ; default is true.
+
+=======
 
 - `nutation` is a boolen parameter that allow to include the Earth's nutation
   effect; default is true.
@@ -389,6 +401,7 @@ The meaning of the parameters/keywords is the following:
 
 - `refract` is a boolen parameter that allow to include the refraction correction
   ; default is true.
+>>>>>>> e4dd169f9952e26b16292dccd44ce64cf69db67e
 
 # Return values
 
